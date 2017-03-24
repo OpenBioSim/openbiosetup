@@ -5,18 +5,74 @@
 #
 #
 
-class Structure():
-    """Placeholder to store information about
-    coordinates, topology, residue and atom identifiers present
-    in a molecule
+class Sequence():
     """
+    Describes the sequence of a molecule to include in the system
+    being prepared.
+
+    Sequence is an abstract base class. Specialised classes implement
+    'organic', 'protein', 'dna', 'rna' sequences.
+    """
+
     def __init__:
         pass
 
 
+class Structure():
+    """Describes the coordinates, topology, residue and atom identifiers present
+    in a molecule structure.
+
+    Structure is an abstract base class. Specialised classes are
+    used for 'organic', 'protein', 'dna', 'rna' structures.
+
+    """
+    def __init__:
+        pass
+
+    def coordinates:
+        """Returns the coordinates of the structure"""
+        pass
+
+    def connectivity:
+        """Returns the bond/bond-orders of the structure"""
+
+    def sequence:
+        """Returns the sequence described by the structure"""
+        pass
+
+class Model():
+    """
+    Describe the sequence and structure of a molecule to include in
+    the system being prepared.
+
+    Model is an abstract base class. Specialised classes are
+    used for 'organic', 'protein', 'dna', 'rna' models.
+
+    Remark:
+      clarify differences between Model and Structure classes
+
+    """
+    def __init__:
+        pass
+
 def loadSequences([]):
-    """Load sequences contained in list of input files,
-    and classify sequence type.
+    """
+    Input:
+    A list of strings that contains paths to input files
+
+    Action:
+    Load sequences contained in list of input files,
+
+    Code has to handle various sequence input formats
+    Initially we can rely on file extensions.
+    We store different types of sequences in different categories
+    e.g. first fasta file read -->
+                      if it contains a protein, store in proteinsequence1
+                      if it contains dna, store in dnasequence1
+          first smiles file read --> organicsequence1
+    We should also do some sanity checks (is this a valid SMILES etc..?)
+
+    classify sequence type and create sequence objects
 
     Allowed sequence types are
 
@@ -29,26 +85,218 @@ def loadSequences([]):
 
     A sequences dictionnary e.g.
 
-    sequences = { "protein1" : "NAC..." ,
-    "organic1": "CC(O)C" }"""
+    sequences = { "protein1" : ProteinSequenceObject ,
+    "organic1": OrganicSequenceObject }"""
 
     return {}
 
 def loadStructures([]):
-    """Load structures contained in list of input files,
-    and classify structure types
+    """
+    Input:
+    A list of strings that contains paths to input files
+
+    We must support a variety of file formats (PDB, mol2, ...)
+
+    Action:
+
+    Load structures contained in list of input files.
+    Classify structure types and create structure objects
+
+    Remark:
+      * structural waters, ions .... handled as 'organic' structures
 
     Output:
 
     A structures dictionnary e.g.
 
-    structures ={ "protein1" : structure_object,
-                  "protein2" : structure_object,
-                  "organic1" : structure_object }
+    structures ={ "protein1" : ProteinStructureObject,
+                  "protein2" : ProteinStructureObject,
+                  "organic1" : OrganicStructureObject }
 
     """
 
     return {}
+
+def mapProteinSequences(sequences, structures):
+    """Input:
+    A system dictionnary
+
+    Action:
+    Find all passed protein sequences
+    For each protein sequence
+    - create a new proteinmodel variable (ProteinStructureClass)
+    perform pairwise sequence alignment to sequences present in all
+    protein structures passed
+
+    If exact match (100% identity)
+          use coordinates of protein structure
+    if sequence is fully contained within template structure (substructure):
+          use coordinates of protein structure
+    if partial match (similarity > minimum threshold)
+         pick template protein sequence with highest similarity
+         use homology modelling to construct structures of query sequence
+    if no match or similarity < minimum threshold
+         BLAST sequence to find possible templates (need access to database)
+
+    Remark:
+       if no match, it may be challenging to model quarternary structures so
+       should consider bailing out if more than one protein sequence needs a
+       structure for this setup
+
+       Some protein structures may have no matching sequences. Default behavior
+       is to ignore structures.
+
+    Output:
+    A list of proteinmodelX entries
+
+    each proteinmodelX variable is a ProteinModelobject
+    """
+    return []
+
+def reviewProteinModels([]):
+    """
+    Input:
+    A list of protein models
+
+    Action:
+    For each model, create a scene to render the structure of the model
+    Allow user to edit structure coordinates
+
+
+    Output:
+    A list of protein models
+
+    """
+    return []
+
+
+
+def mapOrganicSequences(sequences, structures):
+    """
+    Input:
+    A list of sequences and structures objects
+
+    Action:
+    For each organic sequence in the passed sequences
+    create an organicmodel object
+
+    Do a fingerprints similarity calculation against all
+    sequences in organic structures
+
+    full match (Tanimoto 1):
+      use coordinates of matched sequence for model coordinates.
+
+    partial match (Tanimoto > threshold):
+       perform unsupervised alignment onto coordinates of matched sequence.
+
+    no match:
+       generate 3D coordinates from SMILES, activate flag for random
+       position/orientation upon embedding
+
+    Output:
+    A list of organicmodelX entries.
+    each organicmodelX variable is a OrganicModelObject
+    """
+    return []
+
+def reviewOrganicModels([]):
+    """
+    Input:
+    A list of organic models
+
+    Action:
+    For each model, create a scene to render the structure of the model
+    Allow user to edit structure coordinates
+
+
+    Output:
+    A list of organic models
+
+    """
+    return []
+
+def embedModels(proteinmodels, organicmodels):
+    """
+    Input:
+    A list of proteinmodel and organicmodel objects
+
+    Action:
+    Create an empty 'space' container
+    Add every protein and organic models that have known
+    'absolute' coordinates to that container
+
+    Define system bounding box
+
+    Compute bounding box of each positioned protein and organic
+    objects
+
+    For each remaining model lacking absolute coordinates
+    Compute bounding box of model
+
+    Keep randomly inserting model in a random orientation
+    into system bounding box, until no clashes between molecules
+    bounding boxes.
+
+    Remark:
+       Allow flexibility in bounding box geometry
+
+    Output:
+    A system dictionnary that contains a list of protein and organic models,
+    and information about the bounding box geometry
+    """
+    return {}
+
+def solvate(system, environment):
+    """
+    Input:
+    A system dictionnary that contains models within a bounding box
+    An environment dictionary that defines the (co)solvents
+
+    Action:
+    Work out number of each cosolvent molecule to insert in system bounding box
+    to achieve concentrations specified by environment
+
+    Here need alg to position cosolvent molecules without significant clashes
+
+    Remark:
+      - We get more realistic distributions by replicating
+        pre-equilibrated solvent boxes
+
+    Output:
+    A system dictionnary with organic models for each cosolvent molecule
+    """
+    return system
+
+def adjustProtons(system, pH=7.0):
+    """
+    Input:
+    A system dictionary containing models of molecules that
+    have titrable sites
+    A pH value
+
+    Action:
+    Algorithm that determines protonation states from structures
+
+    Output:
+    A system dictionary with updated titrable sites
+
+    """
+    return system
+
+
+def writeOutput(system):
+    """Input:
+    A system dictionnary
+
+    Action:
+    Write the contents of the system to output file formats.
+
+    We need to output
+    - Molecules (connectivity, coordinates, bond orders, elements/atom types)
+    - Box dimensions
+
+    """
+
 
 if __name__ == '__main__':
 
@@ -88,65 +336,58 @@ if __name__ == '__main__':
     structureFiles = ["2ZC9.pdb"]
     ###################################################################
     ###################### Pipeline begins ############################
-    # We initially define our system as a flat python dictionary
-    # Later on when we understand what type of data we need to add & save
-    # we will explore other file formats
-    # Initially the system is empty
-    system = {}
-    # We add to the system the environment information
-    for key, value in environment.items():
-        system[key] = value
+    ###################################################################
+    #
+    # The following steps are core to the pipeline
+    #
+    # We load the input sequences
+    sequences = loadSequences(sequenceFiles)
 
-    # We load the sequences
-    # Code has to handle various sequence input formats
-    # Initially we can rely on file extensions.
-    # We store different types of sequences in different categories
-    # e.g. first fasta file read -->
-    #                  if it contains a protein, store in proteinsequence1
-    #                  if it contains dna, store in dnasequence1
-    #      first smiles file read --> organicsequence1
-    # We should also do some sanity checks (is this a valid SMILES etc..?)
-    sequences =  loadSequences(sequenceFiles)
-    # All sequences are stored in the system
-    for sequenceid, content in sequences.items():
-        system[sequenceid] = content
-
-    # We load the input structures. We must support a variety of input
-    # format.
-    # Code returns a dictionnary of structures, each entry corresponds to
-    # one molecule.
-    # For our purposes at this stage a structure is a collection of
-    # atomic coordinates and bond orders. This will be kept in a class.
+    # We load the input structures
     structures = loadStructures(structureFiles)
-    # All structures are stored in the system
-    for structureid, content in structures.items():
-        system[structureid] = content
 
-    # Next steps
-    # output of mapping is a 'model' e.g. proteinmodel1, organicmodel1 ..
-    # * map protein sequences onto protein structures
-    # work out how to deal with partial and no matches
-    # partial matches are resolved by homology modelling using partial match as
-    # template
-    # warn if partial match is so bad that might as well not use input
-    # structure?
-    # no matches can also be handled via fully automated homology modelling
-    #  (if there are no matches though we can't predict quaternary structures
-    #   current code may limit itself to single sequences with no match)
+    # Depending on the input the next steps may not be always executed.
+    # Multiple different implementations of each action may become available.
+    # Suggests need a different design than top-level module function for
+    # the pipeline 'Actions'
+
+    # We map protein sequences onto protein structures to make protein models
+    proteinmodels = mapProteinSequences(sequences, structures)
+    # * separate procedures could be implemented for DNA/RNA sequences
+
+    # Optional human interaction to review generated models, select
+    # one conformation among ambiguous solutions, or manually edit
+    # structures
+    # commented out as not needed for minimal implementation
+    # proteinmodels = ReviewProteinModels(proteinmodels)
+
+    # We map organic sequences onto organic structures
+    organicmodels = mapOrganicSequences(sequences, structures)
+
+    # Optional human interaction to review generated models, select
+    # one conformation among ambiguous solutions, or manually edit
+    # structures
+    # commented out as not needed for minimal implementation
+    # organicmodels = ReviewOrganicModels(organicmodels)
+
+    # We embedd all proteinmodels and organicmodels in a system
+    system = embedModels(proteinmodels, organicmodels)
+
+    # We solvate the system
+    system = solvate(system, environment)
+
+    # We optimise protonation states
+    # commented out as not needed for minimal implementation
+    # system = adjustProtons(system, pH=environment['pH'])
+
+    # Optional human interaction to review ambiguous protonation states
+
     #
-    # * separate procedure to be implemented for DNA/RNA sequences (not now)
-    # * map organic sequences onto organic structures
-    #   full match: use structure coordinates
-    #   partial match: perform unsupervised alignment onto
-    #   most chemically similar match
-    #   no match: guess 3D coordinates from SMILES and randomly insert in
-    #   system (but not uniformly, bias to avoid clashes) This requires box
-    #   volume definition. Might be useful to generate N random insertions
-    #   for some setups (e.g. MSM binding )
+    # The following step is core to the pipeline
     #
-    # * solvate systems
-    #   work out bounding box that gives satisfactory cutoff, insert cosolvents
-    #
-    # * optimise protons
-    #   best done before or after cosolvents placement ?
-    # 
+    # We write this information in files suitable as input
+    # to a simulation engine input prep utility
+    writeOutput(system)
+    ###################################################################
+    ###################### Pipeline ends ##############################
+    ###################################################################
